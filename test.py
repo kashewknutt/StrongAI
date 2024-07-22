@@ -16,12 +16,14 @@ batch_size = 64  # Number of samples per batch for training
 
 # Model
 model = keras.Sequential([
-    layers.Dense(24, activation='relu', input_shape=state_shape),
+    layers.Input(shape=state_shape),
+    layers.Dense(24, activation='relu'),
     layers.Dense(24, activation='relu'),
     layers.Dense(num_actions, activation='linear')
 ])
 
-model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), loss='mse')
+model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+              loss='mse')
 
 # Experience Replay
 class ReplayBuffer:
@@ -63,7 +65,12 @@ epsilon_decay = 0.995
 
 for episode in range(episodes):
     state = env.reset()
+    if isinstance(state, tuple):
+        state = state[0]
+    state = np.array(state)
+    print(f"Initial state shape: {state.shape}")  # Debugging statement
     state = np.reshape(state, [1, state_shape[0]])
+    print(f"Reshaped state: {state}")  # Debugging statement
     total_reward = 0
 
     for step in range(200):
@@ -74,6 +81,10 @@ for episode in range(episodes):
             action = np.argmax(q_values[0])
 
         next_state, reward, done, _ = env.step(action)
+        if isinstance(next_state, tuple):
+            next_state = next_state[0]
+        next_state = np.array(next_state)
+        print(f"Next state shape: {next_state.shape}")  # Debugging statement
         next_state = np.reshape(next_state, [1, state_shape[0]])
         replay_buffer.add((state, action, reward, next_state, done))
 
