@@ -52,6 +52,10 @@ def train_step(batch_size):
 
     states, actions, rewards, next_states, dones = replay_buffer.sample(batch_size)
 
+    # Ensure the states and next_states are properly shaped
+    states = np.vstack(states)
+    next_states = np.vstack(next_states)
+    
     target_qs = model.predict(next_states)
     targets = rewards + gamma * np.max(target_qs, axis=1) * (1 - dones)
     target_f = model.predict(states)
@@ -80,7 +84,13 @@ for episode in range(episodes):
             q_values = model.predict(state)
             action = np.argmax(q_values[0])
 
-        next_state, reward, done, _ = env.step(action)
+        result = env.step(action)
+        if len(result) == 4:
+            next_state, reward, done, info = result
+        elif len(result) == 5:
+            next_state, reward, done, truncated, info = result
+            done = done or truncated
+
         if isinstance(next_state, tuple):
             next_state = next_state[0]
         next_state = np.array(next_state)
